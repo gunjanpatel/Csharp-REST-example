@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using NorlysElPrice.DataObject;
+﻿using NorlysElPrice.DataObject;
 using NorlysElPrice.Service;
 
 namespace NorlysElPrice;

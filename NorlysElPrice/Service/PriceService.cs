@@ -1,4 +1,5 @@
 ﻿using NorlysElPrice.DataObject;
+using System;
 using System.Text.Json;
 
 namespace NorlysElPrice.Service
@@ -7,9 +8,9 @@ namespace NorlysElPrice.Service
     {
         public static async Task<List<Price>> List()
         {
-            return await JsonSerializer.DeserializeAsync<List<Price>>(
-                await Client.GetData(),
-                new JsonSerializerOptions() { PropertyNameCaseInsensitive = true }
+            return JsonSerializer.Deserialize<List<Price>>(
+                    await Client.GetData(),
+                    new JsonSerializerOptions() { PropertyNameCaseInsensitive = true }
                 ) ?? new();
         }
 
@@ -28,4 +29,3 @@ namespace NorlysElPrice.Service
                     ).FirstOrDefault();
     }
 }
-
