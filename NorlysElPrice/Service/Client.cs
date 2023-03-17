@@ -10,19 +10,35 @@ namespace NorlysElPrice.Service
 
         private static readonly string endpointUrl = "https://norlys.dk/api/flexel/getall?days=1&sector=DK2";
 
-        private static readonly ConnectionMultiplexer connectionMultiplexer = ConnectionMultiplexer.Connect("localhost");
-
         private static readonly TimeSpan cacheExpiryTimeAtMidnight = TimeSpan.FromHours((DateTime.Now.Date.AddDays(1) - DateTime.Now).TotalHours);
 
         public static async Task<string> GetData()
         {
-            // Create a cache object
-            IDatabase cache = connectionMultiplexer.GetDatabase();
+            IDatabase? cache = null;
+            
+            string? cachedData = null;
 
-            // Check if the response is already cached
-            var cachedData = await cache.StringGetAsync(cacheKey);
+            try
+            {
+                ConnectionMultiplexer connectionMultiplexer = ConnectionMultiplexer.Connect("localhost");
 
-            if (cachedData.HasValue)
+                // Create a cache object
+                cache = connectionMultiplexer.GetDatabase();
+
+                cachedData = await cache.StringGetAsync(cacheKey);
+            }
+            catch (RedisConnectionException ex)
+            {
+                // Handle Redis connection errors
+                // Console.WriteLine($"Redis connection error: {ex.Message}");
+            }
+            catch (RedisTimeoutException ex)
+            {
+                // Handle Redis timeout errors
+                // Console.WriteLine($"Redis timeout error: {ex.Message}");
+            }
+
+            if (cachedData != null)
             {
                 // If the response is already cached, return the cached data
                 return cachedData;
@@ -34,7 +50,10 @@ namespace NorlysElPrice.Service
                 .SetSlidingExpiration(cacheExpiryTimeAtMidnight);
 
             // Serialize response and store in cache
-            await cache.StringSetAsync(cacheKey, response, options.SlidingExpiration);
+            if (cache != null)
+            {
+                await cache.StringSetAsync(cacheKey, response, options.SlidingExpiration);
+            }
 
             return response;
         }
